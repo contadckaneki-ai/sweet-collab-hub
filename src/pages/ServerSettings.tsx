@@ -330,6 +330,18 @@ interface AllSettings {
   movChatMessageLimit: number;
   movChatSeconds: number;
   movChatCmdResetmovchat: boolean;
+  instagramEnabled: boolean;
+  instagramMessageModel: string;
+  instagramChannel: string;
+  instagramResultsChannel: string;
+  instagramRewardRole: string;
+  instagramAllowLink: boolean;
+  instagramRequireLink: boolean;
+  instagramVerifyLogChannel: string;
+  instagramVerifyRoles: { id: string; name: string }[];
+  instagramVerifiedRoles: { id: string; name: string }[];
+  instagramConfigs: { id: number; name: string }[];
+  instagramCommands: Record<string, boolean>;
 }
 
 const defaultAllSettings: AllSettings = {
@@ -473,6 +485,21 @@ const defaultAllSettings: AllSettings = {
   movChatMessageLimit: 1,
   movChatSeconds: 1,
   movChatCmdResetmovchat: true,
+  instagramEnabled: false,
+  instagramMessageModel: "new",
+  instagramChannel: "disabled",
+  instagramResultsChannel: "disabled",
+  instagramRewardRole: "disabled",
+  instagramAllowLink: true,
+  instagramRequireLink: false,
+  instagramVerifyLogChannel: "disabled",
+  instagramVerifyRoles: [],
+  instagramVerifiedRoles: [],
+  instagramConfigs: [],
+  instagramCommands: {
+    resetverificacoes: true,
+    instagram: true,
+  },
 };
 
 const emblemsList = [
@@ -532,6 +559,9 @@ const ServerSettings = () => {
   const [modLinkInput, setModLinkInput] = useState("");
   const [callTimeTab, setCallTimeTab] = useState("configuracao");
   const [movChatTab, setMovChatTab] = useState("configuracao");
+  const [instagramTab, setInstagramTab] = useState("configuracao");
+  const [instagramCmdSearch, setInstagramCmdSearch] = useState("");
+  const [instagramConfigOpen, setInstagramConfigOpen] = useState<number | null>(null);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
 
   const update = <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => {
@@ -3075,6 +3105,318 @@ const ServerSettings = () => {
     );
   };
 
+  const igEnabled = current.instagramEnabled;
+
+  const instagramCommandsList = [
+    { key: "resetverificacoes", name: "/resetverificacoes", desc: "Utilize para resetar os dados de verificação de todos os staffs." },
+    { key: "instagram", name: "/instagram", desc: "Utilize para vincular um instagram ao seu perfil." },
+  ];
+
+  const filteredInstagramCommands = instagramCommandsList.filter(
+    (c) => c.name.toLowerCase().includes(instagramCmdSearch.toLowerCase()) || c.desc.toLowerCase().includes(instagramCmdSearch.toLowerCase())
+  );
+
+  const renderInstagramContent = () => (
+    <>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl font-bold">Instagram</h1>
+            <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">Update</span>
+          </div>
+          <p className="mt-1 text-muted-foreground">Permita que seus membros postem fotos, recebam curtidas e comentários.</p>
+        </div>
+        <Switch checked={igEnabled} onCheckedChange={(v) => update("instagramEnabled", v)} />
+      </div>
+
+      {/* Tabs */}
+      <div className="mt-6 flex gap-6 border-b border-border/50">
+        {[
+          { id: "configuracao", label: "Configuração" },
+          { id: "lista", label: "Lista de Instagram" },
+          { id: "comandos", label: "Comandos" },
+          { id: "ranking", label: "Ranking" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setInstagramTab(tab.id)}
+            className={`pb-3 text-sm font-medium transition-colors ${instagramTab === tab.id ? "border-b-2 border-primary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative mt-6 min-h-[400px]">
+        <AnimatePresence>
+          {!igEnabled && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="absolute inset-0 z-10 flex items-start justify-center pt-32 rounded-lg bg-background/60 backdrop-blur-sm">
+              <div className="rounded-xl border border-border/50 bg-card p-8 text-center shadow-xl max-w-sm">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"><Instagram className="h-6 w-6 text-primary" /></div>
+                <h3 className="font-display text-lg font-bold">Instagram</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Permita que seus membros postem fotos, recebam curtidas e comentários.</p>
+                <Button onClick={() => update("instagramEnabled", true)} className="mt-4 w-full bg-primary text-primary-foreground hover:bg-primary/90">Ativar plugin</Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {instagramTab === "configuracao" && (
+          <div className="space-y-8">
+            {/* Configurações de Instagram */}
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">Configurações de instagram</h2>
+              <div className="rounded-lg border border-border/50 bg-card p-6 space-y-4">
+                <Button variant="outline" className="border-border" disabled={!igEnabled}>
+                  Criar instagram
+                </Button>
+                {current.instagramConfigs.length === 0 ? (
+                  <div className="rounded-lg border border-border/50 bg-background">
+                    <button
+                      className="w-full flex items-center justify-between p-4 text-sm text-muted-foreground"
+                      disabled={!igEnabled}
+                      onClick={() => setInstagramConfigOpen(instagramConfigOpen === 0 ? null : 0)}
+                    >
+                      <span>Não Configurado.</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${instagramConfigOpen === 0 ? "rotate-180" : ""}`} />
+                    </button>
+                    <AnimatePresence>
+                      {instagramConfigOpen === 0 && igEnabled && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                          <div className="border-t border-border/50 p-6 space-y-6">
+                            {/* Modelo da mensagem */}
+                            <div>
+                              <h3 className="font-semibold text-sm">Modelo da mensagem</h3>
+                              <p className="text-xs text-muted-foreground mt-1">Selecione o modelo de mensagem que será usado da postagem do instagram.</p>
+                              <div className="mt-3 space-y-2">
+                                <button
+                                  onClick={() => update("instagramMessageModel", "new")}
+                                  className={`flex items-center gap-3 w-full max-w-md rounded-lg border p-3 text-left transition-colors ${current.instagramMessageModel === "new" ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                                >
+                                  <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">Modelo novo</p>
+                                    <p className="text-xs text-muted-foreground">Use o modelo de mensagem novo.</p>
+                                  </div>
+                                </button>
+                                <button
+                                  onClick={() => update("instagramMessageModel", "old")}
+                                  className={`flex items-center gap-3 w-full max-w-md rounded-lg border p-3 text-left transition-colors ${current.instagramMessageModel === "old" ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                                >
+                                  <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">Modelo antigo</p>
+                                    <p className="text-xs text-muted-foreground">Use o modelo de mensagem antigo.</p>
+                                  </div>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Canal de Instagram */}
+                            <div className="rounded-lg border border-border/50 bg-card p-4">
+                              <div className="border-l-2 border-primary pl-4">
+                                <p className="text-sm font-medium">Canal de Instagram</p>
+                              </div>
+                              <div className="mt-3">
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Canal</label>
+                                <Select value={current.instagramChannel} onValueChange={(v) => update("instagramChannel", v)}>
+                                  <SelectTrigger className="w-full max-w-xs bg-background border-border"><SelectValue placeholder="Selecione um canal" /></SelectTrigger>
+                                  <SelectContent>{channelOptions}</SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Canal de resultados */}
+                            <div className="rounded-lg border border-border/50 bg-card p-4">
+                              <div className="border-l-2 border-primary pl-4">
+                                <p className="text-sm font-medium">Canal de resultados</p>
+                              </div>
+                              <div className="mt-3">
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Canal</label>
+                                <Select value={current.instagramResultsChannel} onValueChange={(v) => update("instagramResultsChannel", v)}>
+                                  <SelectTrigger className="w-full max-w-xs bg-background border-border"><SelectValue placeholder="Selecione um canal" /></SelectTrigger>
+                                  <SelectContent>{channelOptions}</SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Cargo de recompensa */}
+                            <div className="rounded-lg border border-border/50 bg-card p-4">
+                              <div className="border-l-2 border-primary pl-4">
+                                <p className="text-sm font-medium">Cargo de recompensa</p>
+                              </div>
+                              <div className="mt-3">
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Cargo</label>
+                                <Select value={current.instagramRewardRole} onValueChange={(v) => update("instagramRewardRole", v)}>
+                                  <SelectTrigger className="w-full max-w-xs bg-background border-border"><SelectValue placeholder="Desativado" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="disabled">Desativado</SelectItem>
+                                    {mockRoles.map((r) => (<SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Emojis */}
+                            <div className="rounded-lg border border-border/50 bg-card p-4">
+                              <div className="border-l-2 border-primary pl-4">
+                                <p className="text-sm font-medium">Emojis (Deixe vazio caso queira utilizar os emojis padrões)</p>
+                              </div>
+                              <div className="mt-3">
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Destaque</label>
+                                <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                                  <Plus className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-6">
+                                {["Curtida", "Comentário", "Emoji do Instagram", "Listar Interações", "Deletar Postagem"].map((label) => (
+                                  <div key={label}>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
+                                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Permitir vincular instagram */}
+                            <div className="flex items-center justify-between py-2">
+                              <div>
+                                <h3 className="font-semibold text-sm">Permitir vincular instagram</h3>
+                                <p className="text-xs text-muted-foreground">Permitir que os membros vinculem instagram em suas postagens</p>
+                              </div>
+                              <Switch checked={current.instagramAllowLink} onCheckedChange={(v) => update("instagramAllowLink", v)} />
+                            </div>
+
+                            {/* Obrigatório vincular instagram */}
+                            <div className="flex items-center justify-between py-2">
+                              <div>
+                                <h3 className="font-semibold text-sm">Obrigatório vincular instagram</h3>
+                                <p className="text-xs text-muted-foreground">Com essa opção ativa, os membros só podem postar fotos quando tiverem um instagram vinculado</p>
+                              </div>
+                              <Switch checked={current.instagramRequireLink} onCheckedChange={(v) => update("instagramRequireLink", v)} />
+                            </div>
+
+                            {/* Remover button */}
+                            <Button variant="destructive" className="w-full">Remover</Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Configurações de verificação */}
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">Configurações de verificação</h2>
+              <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
+                <div className="rounded-lg border border-border/50 bg-card p-4">
+                  <div className="border-l-2 border-primary pl-4">
+                    <p className="text-sm font-medium">Configure o canal de logs de verificação</p>
+                    <p className="text-xs text-muted-foreground mt-1">Logs de verificação</p>
+                  </div>
+                  <div className="mt-3">
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Logs de verificação</label>
+                    <Select value={current.instagramVerifyLogChannel} onValueChange={(v) => update("instagramVerifyLogChannel", v)} disabled={!igEnabled}>
+                      <SelectTrigger className="w-full max-w-xs bg-background border-border"><SelectValue placeholder="Selecione um canal" /></SelectTrigger>
+                      <SelectContent>{channelOptions}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border/50 bg-card p-4">
+                  <div className="border-l-2 border-primary pl-4">
+                    <p className="text-sm font-medium">Cargos com permissão de verificação</p>
+                  </div>
+                  <div className="mt-3">
+                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border/50 bg-card p-4">
+                  <div className="border-l-2 border-primary pl-4">
+                    <p className="text-sm font-medium">Cargos de verificado</p>
+                  </div>
+                  <div className="mt-3">
+                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {instagramTab === "lista" && (
+          <div>
+            <div className="rounded-lg border border-border/50 bg-card p-6">
+              <div className="border-l-2 border-primary pl-4 mb-4">
+                <p className="text-sm font-medium">Lista de Instagram</p>
+              </div>
+              <p className="text-sm text-muted-foreground">Nenhum dado encontrado.</p>
+            </div>
+          </div>
+        )}
+
+        {instagramTab === "comandos" && (
+          <div>
+            <div className="rounded-lg border border-border/50 bg-card p-6">
+              <div className="border-l-2 border-primary pl-4 mb-4">
+                <p className="text-sm font-medium">Lista de comandos</p>
+              </div>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar..."
+                  value={instagramCmdSearch}
+                  onChange={(e) => setInstagramCmdSearch(e.target.value)}
+                  className="pl-9 bg-background border-border"
+                  disabled={!igEnabled}
+                />
+              </div>
+              <div className="space-y-3">
+                {filteredInstagramCommands.map((cmd) => (
+                  <div key={cmd.key} className="flex items-center justify-between rounded-lg border border-border/50 bg-background p-4">
+                    <div>
+                      <p className="text-sm font-semibold">{cmd.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{cmd.desc}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm" className="border-border" disabled={!igEnabled}>Editar</Button>
+                      <Switch
+                        checked={current.instagramCommands[cmd.key] ?? true}
+                        onCheckedChange={(v) => update("instagramCommands", { ...current.instagramCommands, [cmd.key]: v })}
+                        disabled={!igEnabled}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {instagramTab === "ranking" && (
+          <div>
+            <div className="rounded-lg border border-border/50 bg-card p-6">
+              <div className="border-l-2 border-primary pl-4 mb-4">
+                <p className="text-sm font-medium">Ranking de Instagram</p>
+              </div>
+              <p className="text-sm text-muted-foreground">Nenhum dado encontrado.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+
   const renderPlaceholderContent = (title: string, description: string) => (
     <>
       <h1 className="font-display text-3xl font-bold">{title}</h1>
@@ -3111,7 +3453,7 @@ const ServerSettings = () => {
       case "registro": return renderPlaceholderContent("Registro", "Configure o sistema de registro");
       case "primeira-dama": return renderPlaceholderContent("Primeira Dama", "Configure o sistema de primeira dama");
       case "panela": return renderPlaceholderContent("Panela", "Configure o sistema de panela");
-      case "instagram": return renderPlaceholderContent("Instagram", "Configure integração com Instagram");
+      case "instagram": return renderInstagramContent();
       case "influencers": return renderPlaceholderContent("Influencers", "Configure o sistema de influencers");
       case "tellonym": return renderPlaceholderContent("Tellonym", "Configure integração com Tellonym");
       case "tickets": return renderPlaceholderContent("Tickets", "Configure o sistema de tickets");
