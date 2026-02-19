@@ -573,6 +573,7 @@ const ServerSettings = () => {
   const [instagramCmdSearch, setInstagramCmdSearch] = useState("");
   const [instagramConfigOpen, setInstagramConfigOpen] = useState<number | null>(null);
   const [instagramCreated, setInstagramCreated] = useState(false);
+  const [savedInstagramCreated, setSavedInstagramCreated] = useState(false);
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [igVerifyDropdownOpen, setIgVerifyDropdownOpen] = useState(false);
@@ -612,10 +613,10 @@ const ServerSettings = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const hasChanges = useMemo(() => JSON.stringify(current) !== JSON.stringify(saved) || JSON.stringify(permToggles) !== JSON.stringify(savedPermToggles) || JSON.stringify(wlQuestions) !== JSON.stringify(savedWlQuestions), [current, saved, permToggles, savedPermToggles, wlQuestions, savedWlQuestions]);
+  const hasChanges = useMemo(() => JSON.stringify(current) !== JSON.stringify(saved) || JSON.stringify(permToggles) !== JSON.stringify(savedPermToggles) || JSON.stringify(wlQuestions) !== JSON.stringify(savedWlQuestions) || instagramCreated !== savedInstagramCreated, [current, saved, permToggles, savedPermToggles, wlQuestions, savedWlQuestions, instagramCreated, savedInstagramCreated]);
 
-  const handleSave = useCallback(() => { setSaved(structuredClone(current)); setSavedPermToggles(structuredClone(permToggles)); setSavedWlQuestions(structuredClone(wlQuestions)); }, [current, permToggles, wlQuestions]);
-  const handleDiscard = useCallback(() => { setCurrent(structuredClone(saved)); setPermToggles(structuredClone(savedPermToggles)); setWlQuestions(structuredClone(savedWlQuestions)); }, [saved, savedPermToggles, savedWlQuestions]);
+  const handleSave = useCallback(() => { setSaved(structuredClone(current)); setSavedPermToggles(structuredClone(permToggles)); setSavedWlQuestions(structuredClone(wlQuestions)); setSavedInstagramCreated(instagramCreated); }, [current, permToggles, wlQuestions, instagramCreated]);
+  const handleDiscard = useCallback(() => { setCurrent(structuredClone(saved)); setPermToggles(structuredClone(savedPermToggles)); setWlQuestions(structuredClone(savedWlQuestions)); setInstagramCreated(savedInstagramCreated); }, [saved, savedPermToggles, savedWlQuestions, savedInstagramCreated]);
 
   const serverName = guild?.name || "Servidor";
   const serverIcon = guild ? getGuildIconUrl(guild) : null;
