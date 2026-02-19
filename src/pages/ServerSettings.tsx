@@ -562,6 +562,7 @@ const ServerSettings = () => {
   const [instagramTab, setInstagramTab] = useState("configuracao");
   const [instagramCmdSearch, setInstagramCmdSearch] = useState("");
   const [instagramConfigOpen, setInstagramConfigOpen] = useState<number | null>(null);
+  const [instagramCreated, setInstagramCreated] = useState(false);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
 
   const update = <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => {
@@ -3167,10 +3168,10 @@ const ServerSettings = () => {
             <div>
               <h2 className="font-display text-xl font-semibold mb-4">Configurações de instagram</h2>
               <div className="rounded-lg border border-border/50 bg-card p-6 space-y-4">
-                <Button variant="outline" className="border-border" disabled={!igEnabled}>
+                <Button variant="outline" className="border-border" disabled={!igEnabled} onClick={() => setInstagramCreated(true)}>
                   Criar instagram
                 </Button>
-                {current.instagramConfigs.length === 0 ? (
+                {instagramCreated ? (
                   <div className="rounded-lg border border-border/50 bg-background">
                     <button
                       className="w-full flex items-center justify-between p-4 text-sm text-muted-foreground"
@@ -3331,10 +3332,19 @@ const ServerSettings = () => {
                   <div className="border-l-2 border-primary pl-4">
                     <p className="text-sm font-medium">Cargos com permissão de verificação</p>
                   </div>
-                  <div className="mt-3">
-                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button disabled={!igEnabled} onClick={() => {
+                      const available = mockRoles.filter(r => !current.instagramVerifyRoles.some(vr => vr.id === r.id));
+                      if (available.length > 0) update("instagramVerifyRoles", [...current.instagramVerifyRoles, available[0]]);
+                    }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                       <Plus className="h-4 w-4" />
                     </button>
+                    {current.instagramVerifyRoles.map((role) => (
+                      <span key={role.id} className="flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs font-medium">
+                        {role.name}
+                        <button onClick={() => update("instagramVerifyRoles", current.instagramVerifyRoles.filter(r => r.id !== role.id))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
                   </div>
                 </div>
 
@@ -3342,10 +3352,19 @@ const ServerSettings = () => {
                   <div className="border-l-2 border-primary pl-4">
                     <p className="text-sm font-medium">Cargos de verificado</p>
                   </div>
-                  <div className="mt-3">
-                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button disabled={!igEnabled} onClick={() => {
+                      const available = mockRoles.filter(r => !current.instagramVerifiedRoles.some(vr => vr.id === r.id));
+                      if (available.length > 0) update("instagramVerifiedRoles", [...current.instagramVerifiedRoles, available[0]]);
+                    }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                       <Plus className="h-4 w-4" />
                     </button>
+                    {current.instagramVerifiedRoles.map((role) => (
+                      <span key={role.id} className="flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs font-medium">
+                        {role.name}
+                        <button onClick={() => update("instagramVerifiedRoles", current.instagramVerifiedRoles.filter(r => r.id !== role.id))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
