@@ -293,6 +293,7 @@ interface AllSettings {
   bioMentionRoles: boolean;
   bioMentionUsers: boolean;
   bioVerifyText: string;
+  bioVerifyColor: string;
   bioVerifyRoles: { id: string; name: string }[];
   whitelistEnabled: boolean;
   wlApprovalChannel: string;
@@ -449,6 +450,7 @@ const defaultAllSettings: AllSettings = {
   bioMentionRoles: true,
   bioMentionUsers: true,
   bioVerifyText: "",
+  bioVerifyColor: "#5865F2",
   bioVerifyRoles: [],
   whitelistEnabled: false,
   wlApprovalChannel: "disabled",
@@ -1981,13 +1983,39 @@ const ServerSettings = () => {
             <h2 className="font-display text-xl font-semibold mb-4">Verificação</h2>
             <div className="space-y-6">
               <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Texto de verificação</p></div>
+                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Mensagem de Verificação</p></div>
                 <div className="mt-4">
-                  <Input value={current.bioVerifyText} onChange={(e) => update("bioVerifyText", e.target.value)} className="bg-background border-border max-w-md" disabled={!bc} />
+                  <div className="flex items-center gap-3">
+                    <button
+                      disabled={!bc}
+                      className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{ borderColor: current.bioVerifyColor, color: current.bioVerifyColor }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Verificar
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {["#5865F2", "#9B59B6", "#2ECC71", "#E74C3C"].map((color) => (
+                        <button
+                          key={color}
+                          disabled={!bc}
+                          onClick={() => update("bioVerifyColor", color)}
+                          className={`h-4 w-4 rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-50 ${current.bioVerifyColor === color ? "ring-2 ring-offset-2 ring-offset-background" : ""}`}
+                          style={{ backgroundColor: color, ...(current.bioVerifyColor === color ? { '--tw-ring-color': color } as React.CSSProperties : {}) }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Cargos de verificação</p></div>
+                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Texto a ser verificado no perfil dos usuários</p></div>
+                <div className="mt-4">
+                  <Input value={current.bioVerifyText} onChange={(e) => update("bioVerifyText", e.target.value)} className="bg-background border-border max-w-md" disabled={!bc} placeholder="Ex: Verificado" />
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/50 bg-card p-6">
+                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Cargos a serem dados quando verificado</p></div>
                 <div className="mt-4">
                   <button disabled={!bc} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
                     <Plus className="h-4 w-4" />
