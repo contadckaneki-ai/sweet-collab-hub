@@ -575,6 +575,11 @@ const ServerSettings = () => {
   const [instagramCreated, setInstagramCreated] = useState(false);
   const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const [igVerifyDropdownOpen, setIgVerifyDropdownOpen] = useState(false);
+  const [igVerifiedDropdownOpen, setIgVerifiedDropdownOpen] = useState(false);
+  const [igRoleSearch, setIgRoleSearch] = useState("");
+  const igVerifyDropdownRef = useRef<HTMLDivElement>(null);
+  const igVerifiedDropdownRef = useRef<HTMLDivElement>(null);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
 
   const update = <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => {
@@ -595,6 +600,12 @@ const ServerSettings = () => {
       }
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
         setEmojiPickerTarget(null);
+      }
+      if (igVerifyDropdownRef.current && !igVerifyDropdownRef.current.contains(e.target as Node)) {
+        setIgVerifyDropdownOpen(false);
+      }
+      if (igVerifiedDropdownRef.current && !igVerifiedDropdownRef.current.contains(e.target as Node)) {
+        setIgVerifiedDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -3364,12 +3375,28 @@ const ServerSettings = () => {
                     <p className="text-sm font-medium">Cargos com permissão de verificação</p>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button disabled={!igEnabled} onClick={() => {
-                      const available = mockRoles.filter(r => !current.instagramVerifyRoles.some(vr => vr.id === r.id));
-                      if (available.length > 0) update("instagramVerifyRoles", [...current.instagramVerifyRoles, available[0]]);
-                    }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                      <Plus className="h-4 w-4" />
-                    </button>
+                    <div className="relative" ref={igVerifyDropdownRef}>
+                      <button disabled={!igEnabled} onClick={() => { setIgVerifyDropdownOpen(!igVerifyDropdownOpen); setIgRoleSearch(""); }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                        <Plus className="h-4 w-4" />
+                      </button>
+                      {igVerifyDropdownOpen && (
+                        <div className="absolute z-50 top-full mt-1 left-0 w-56 rounded-lg border border-border bg-card shadow-xl">
+                          <div className="p-2">
+                            <div className="relative">
+                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input placeholder="Pesquisar" value={igRoleSearch} onChange={(e) => setIgRoleSearch(e.target.value)} className="pl-7 h-8 text-xs bg-background border-border" />
+                            </div>
+                          </div>
+                          <div className="max-h-40 overflow-y-auto px-1 pb-1">
+                            {mockRoles.filter(r => !current.instagramVerifyRoles.some(vr => vr.id === r.id) && r.name.toLowerCase().includes(igRoleSearch.toLowerCase())).map((role) => (
+                              <button key={role.id} onClick={() => { update("instagramVerifyRoles", [...current.instagramVerifyRoles, role]); setIgVerifyDropdownOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted transition-colors">
+                                @{role.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     {current.instagramVerifyRoles.map((role) => (
                       <span key={role.id} className="flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs font-medium">
                         {role.name}
@@ -3384,12 +3411,28 @@ const ServerSettings = () => {
                     <p className="text-sm font-medium">Cargos de verificado</p>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button disabled={!igEnabled} onClick={() => {
-                      const available = mockRoles.filter(r => !current.instagramVerifiedRoles.some(vr => vr.id === r.id));
-                      if (available.length > 0) update("instagramVerifiedRoles", [...current.instagramVerifiedRoles, available[0]]);
-                    }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                      <Plus className="h-4 w-4" />
-                    </button>
+                    <div className="relative" ref={igVerifiedDropdownRef}>
+                      <button disabled={!igEnabled} onClick={() => { setIgVerifiedDropdownOpen(!igVerifiedDropdownOpen); setIgRoleSearch(""); }} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                        <Plus className="h-4 w-4" />
+                      </button>
+                      {igVerifiedDropdownOpen && (
+                        <div className="absolute z-50 top-full mt-1 left-0 w-56 rounded-lg border border-border bg-card shadow-xl">
+                          <div className="p-2">
+                            <div className="relative">
+                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input placeholder="Pesquisar" value={igRoleSearch} onChange={(e) => setIgRoleSearch(e.target.value)} className="pl-7 h-8 text-xs bg-background border-border" />
+                            </div>
+                          </div>
+                          <div className="max-h-40 overflow-y-auto px-1 pb-1">
+                            {mockRoles.filter(r => !current.instagramVerifiedRoles.some(vr => vr.id === r.id) && r.name.toLowerCase().includes(igRoleSearch.toLowerCase())).map((role) => (
+                              <button key={role.id} onClick={() => { update("instagramVerifiedRoles", [...current.instagramVerifiedRoles, role]); setIgVerifiedDropdownOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted transition-colors">
+                                @{role.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     {current.instagramVerifiedRoles.map((role) => (
                       <span key={role.id} className="flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs font-medium">
                         {role.name}
