@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getToken, fetchUserGuilds, getGuildIconUrl, isAuthenticated, type DiscordGuild } from "@/lib/discord";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
@@ -342,6 +343,7 @@ interface AllSettings {
   instagramVerifiedRoles: { id: string; name: string }[];
   instagramConfigs: { id: number; name: string }[];
   instagramCommands: Record<string, boolean>;
+  instagramEmojis: Record<string, string>;
 }
 
 const defaultAllSettings: AllSettings = {
@@ -500,6 +502,14 @@ const defaultAllSettings: AllSettings = {
     resetverificacoes: true,
     instagram: true,
   },
+  instagramEmojis: {
+    destaque: "",
+    curtida: "",
+    comentario: "",
+    emojiInstagram: "",
+    listarInteracoes: "",
+    deletarPostagem: "",
+  },
 };
 
 const emblemsList = [
@@ -563,6 +573,8 @@ const ServerSettings = () => {
   const [instagramCmdSearch, setInstagramCmdSearch] = useState("");
   const [instagramConfigOpen, setInstagramConfigOpen] = useState<number | null>(null);
   const [instagramCreated, setInstagramCreated] = useState(false);
+  const [emojiPickerTarget, setEmojiPickerTarget] = useState<string | null>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
 
   const update = <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => {
@@ -580,6 +592,9 @@ const ServerSettings = () => {
       }
       if (mgAddCargoRef.current && !mgAddCargoRef.current.contains(e.target as Node)) {
         setMgAddCargoOpen(false);
+      }
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setEmojiPickerTarget(null);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -3263,19 +3278,35 @@ const ServerSettings = () => {
                               <div className="border-l-2 border-primary pl-4">
                                 <p className="text-sm font-medium">Emojis (Deixe vazio caso queira utilizar os emojis padrões)</p>
                               </div>
-                              <div className="mt-3">
+                              <div className="mt-3 relative">
                                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Destaque</label>
-                                <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                                  <Plus className="h-4 w-4" />
+                                <button disabled={!igEnabled} onClick={() => setEmojiPickerTarget(emojiPickerTarget === "destaque" ? null : "destaque")} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                                  {current.instagramEmojis.destaque ? <span className="text-lg">{current.instagramEmojis.destaque}</span> : <Plus className="h-4 w-4" />}
                                 </button>
+                                {emojiPickerTarget === "destaque" && (
+                                  <div ref={emojiPickerRef} className="absolute z-50 top-full mt-2 left-0">
+                                    <EmojiPicker theme={Theme.DARK} onEmojiClick={(e) => { update("instagramEmojis", { ...current.instagramEmojis, destaque: e.emoji }); setEmojiPickerTarget(null); }} />
+                                  </div>
+                                )}
                               </div>
                               <div className="mt-4 flex flex-wrap gap-6">
-                                {["Curtida", "Comentário", "Emoji do Instagram", "Listar Interações", "Deletar Postagem"].map((label) => (
-                                  <div key={label}>
-                                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
-                                    <button disabled={!igEnabled} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                                      <Plus className="h-4 w-4" />
+                                {[
+                                  { key: "curtida", label: "Curtida" },
+                                  { key: "comentario", label: "Comentário" },
+                                  { key: "emojiInstagram", label: "Emoji do Instagram" },
+                                  { key: "listarInteracoes", label: "Listar Interações" },
+                                  { key: "deletarPostagem", label: "Deletar Postagem" },
+                                ].map((item) => (
+                                  <div key={item.key} className="relative">
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</label>
+                                    <button disabled={!igEnabled} onClick={() => setEmojiPickerTarget(emojiPickerTarget === item.key ? null : item.key)} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                                      {current.instagramEmojis[item.key] ? <span className="text-lg">{current.instagramEmojis[item.key]}</span> : <Plus className="h-4 w-4" />}
                                     </button>
+                                    {emojiPickerTarget === item.key && (
+                                      <div ref={emojiPickerRef} className="absolute z-50 top-full mt-2 left-0">
+                                        <EmojiPicker theme={Theme.DARK} onEmojiClick={(e) => { update("instagramEmojis", { ...current.instagramEmojis, [item.key]: e.emoji }); setEmojiPickerTarget(null); }} />
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -3300,7 +3331,7 @@ const ServerSettings = () => {
                             </div>
 
                             {/* Remover button */}
-                            <Button variant="destructive" className="w-full">Remover</Button>
+                            <Button variant="destructive" className="w-full" onClick={() => { setInstagramCreated(false); setInstagramConfigOpen(null); }}>Remover</Button>
                           </div>
                         </motion.div>
                       )}
