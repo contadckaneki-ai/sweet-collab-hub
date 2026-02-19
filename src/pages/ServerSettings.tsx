@@ -583,6 +583,11 @@ const ServerSettings = () => {
   const [igRoleSearch, setIgRoleSearch] = useState("");
   const igVerifyDropdownRef = useRef<HTMLDivElement>(null);
   const igVerifiedDropdownRef = useRef<HTMLDivElement>(null);
+  const [bioRolesDropdownOpen, setBioRolesDropdownOpen] = useState(false);
+  const [bioVerifyRolesDropdownOpen, setBioVerifyRolesDropdownOpen] = useState(false);
+  const [bioRoleSearch, setBioRoleSearch] = useState("");
+  const bioRolesDropdownRef = useRef<HTMLDivElement>(null);
+  const bioVerifyRolesDropdownRef = useRef<HTMLDivElement>(null);
   const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
 
   const update = <K extends keyof AllSettings>(key: K, value: AllSettings[K]) => {
@@ -609,6 +614,12 @@ const ServerSettings = () => {
       }
       if (igVerifiedDropdownRef.current && !igVerifiedDropdownRef.current.contains(e.target as Node)) {
         setIgVerifiedDropdownOpen(false);
+      }
+      if (bioRolesDropdownRef.current && !bioRolesDropdownRef.current.contains(e.target as Node)) {
+        setBioRolesDropdownOpen(false);
+      }
+      if (bioVerifyRolesDropdownRef.current && !bioVerifyRolesDropdownRef.current.contains(e.target as Node)) {
+        setBioVerifyRolesDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -1861,21 +1872,21 @@ const ServerSettings = () => {
           )}
         </AnimatePresence>
         <div className="space-y-8">
+          {/* Configurações */}
           <div>
             <h2 className="font-display text-xl font-semibold mb-4">Configurações</h2>
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+            <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
+              <div>
                 <div className="border-l-2 border-primary pl-4">
                   <p className="text-sm font-medium">Tokens (Veja nosso tutorial <span className="text-primary underline cursor-pointer">aqui</span>)</p>
                 </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <Input value={current.bioTokens} onChange={(e) => update("bioTokens", e.target.value)} className="bg-background border-border" disabled={!bc} placeholder="" />
-                  <Button variant="outline" className="border-border shrink-0" disabled={!bc}>
+                <div className="mt-4">
+                  <Button variant="outline" className="w-full max-w-md border-border" disabled={!bc}>
                     <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar Token
                   </Button>
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+              <div className="border-t border-border pt-6">
                 <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Configure um canal de logs</p></div>
                 <div className="mt-4">
                   <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground">Canal de logs</label>
@@ -1887,28 +1898,57 @@ const ServerSettings = () => {
               </div>
             </div>
           </div>
+
+          {/* Bio Checker de Cargos */}
           <div>
             <h2 className="font-display text-xl font-semibold mb-4">Bio Checker de Cargos</h2>
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+            <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
+              <div>
                 <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Configure os cargos a serem checados</p></div>
                 <div className="mt-4">
-                  <button disabled={!bc} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                    <Plus className="h-4 w-4" />
-                  </button>
                   {current.bioRoles.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mb-3 flex flex-wrap gap-2">
                       {current.bioRoles.map((role) => (
-                        <span key={role.id} className="flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs font-medium">
+                        <span key={role.id} className="inline-flex items-center gap-1 rounded bg-primary/20 px-2 py-1 text-xs text-primary">
                           {role.name}
-                          <button onClick={() => update("bioRoles", current.bioRoles.filter(r => r.id !== role.id))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                          <button onClick={() => update("bioRoles", current.bioRoles.filter(r => r.id !== role.id))} className="ml-1 text-muted-foreground hover:text-foreground">×</button>
                         </span>
                       ))}
                     </div>
                   )}
+                  <div className="relative" ref={bioRolesDropdownRef}>
+                    <button
+                      disabled={!bc}
+                      onClick={() => { setBioRolesDropdownOpen(!bioRolesDropdownOpen); setBioRoleSearch(""); }}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    {bioRolesDropdownOpen && (
+                      <div className="absolute z-50 mt-1 w-64 rounded-md border border-border bg-popover p-2 shadow-lg">
+                        <div className="relative mb-2">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            value={bioRoleSearch}
+                            onChange={(e) => setBioRoleSearch(e.target.value)}
+                            placeholder="Pesquisar cargo..."
+                            className="pl-8 h-8 text-xs bg-background border-border"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="max-h-32 overflow-y-auto">
+                          {mockRoles.filter(r => !current.bioRoles.some(br => br.id === r.id) && r.name.toLowerCase().includes(bioRoleSearch.toLowerCase())).map((r) => (
+                            <button key={r.id} className="w-full rounded px-3 py-1.5 text-left text-sm hover:bg-accent" onClick={() => { update("bioRoles", [...current.bioRoles, r]); setBioRolesDropdownOpen(false); }}>
+                              {r.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+              <div className="border-t border-border pt-6">
                 <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Texto a ser verificado no perfil dos usuários</p></div>
                 <div className="mt-4">
                   <Input value={current.bioProfileText} onChange={(e) => update("bioProfileText", e.target.value)} className="bg-background border-border max-w-md" disabled={!bc} />
@@ -1916,11 +1956,14 @@ const ServerSettings = () => {
               </div>
             </div>
           </div>
+
+          {/* Bio Checker */}
           <div>
             <h2 className="font-display text-xl font-semibold mb-4">Bio Checker</h2>
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Canal a ser postada a mensagem</p></div>
+            <div className="rounded-lg border border-border/50 bg-card p-6 space-y-6">
+              {/* Canal */}
+              <div>
+                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Canal a ser postado a mensagem</p></div>
                 <div className="mt-4 flex items-center gap-3">
                   <Select value={current.bioPostChannel} onValueChange={(v) => update("bioPostChannel", v)} disabled={!bc}>
                     <SelectTrigger className="w-full max-w-xs bg-background border-border"><SelectValue /></SelectTrigger>
@@ -1929,97 +1972,164 @@ const ServerSettings = () => {
                   <Button disabled={!bc || current.bioPostChannel === "disabled"} className="bg-green-600 hover:bg-green-700 text-primary-foreground shrink-0">Enviar mensagem</Button>
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4">
-                  <p className="text-sm font-bold">Builder Mode</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Selecione qual builder mode será usado para criar a mensagem.</p>
-                </div>
-                <div className="mt-4 space-y-3">
+
+              {/* Builder Mode */}
+              <div className="border-t border-border pt-6">
+                <p className="text-sm font-bold">Builder Mode</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Selecione se o builder mode será usado para criar a mensagem.</p>
+                <div className="mt-4 space-y-3 max-w-md">
                   <label className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-colors ${current.bioBuilderMode === "message-builder" ? "border-primary bg-primary/5" : "border-border bg-background"} ${!bc ? "pointer-events-none opacity-50" : ""}`}>
                     <input type="radio" name="bioBuilderMode" value="message-builder" checked={current.bioBuilderMode === "message-builder"} onChange={(e) => update("bioBuilderMode", e.target.value)} disabled={!bc} className="mt-1" />
                     <div>
                       <p className="text-sm font-bold">Message Builder</p>
-                      <p className="text-xs text-muted-foreground">Use o construtor de mensagens antigo com content, embeds, botões e mais.</p>
+                      <p className="text-xs text-muted-foreground">Use o construtor de mensagens antigo com content, embeds, botões e menu.</p>
                     </div>
                   </label>
-                  <label className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-colors ${current.bioBuilderMode === "kally-engine" ? "border-primary bg-primary/5" : "border-border bg-background"} ${!bc ? "pointer-events-none opacity-50" : ""}`}>
-                    <input type="radio" name="bioBuilderMode" value="kally-engine" checked={current.bioBuilderMode === "kally-engine"} onChange={(e) => update("bioBuilderMode", e.target.value)} disabled={!bc} className="mt-1" />
+                  <label className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-colors ${current.bioBuilderMode === "components-v2" ? "border-primary bg-primary/5" : "border-border bg-background"} ${!bc ? "pointer-events-none opacity-50" : ""}`}>
+                    <input type="radio" name="bioBuilderMode" value="components-v2" checked={current.bioBuilderMode === "components-v2"} onChange={(e) => update("bioBuilderMode", e.target.value)} disabled={!bc} className="mt-1" />
                     <div>
-                      <p className="text-sm font-bold">Kally Engine</p>
-                      <p className="text-xs text-muted-foreground">Use a nova engine para criar mensagens com mais recursos.</p>
+                      <p className="text-sm font-bold">Components V2</p>
+                      <p className="text-xs text-muted-foreground">Use os novos componentes de mensagens com o layout atualizado do Discord.</p>
                     </div>
                   </label>
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Mensagem</p></div>
+
+              {/* Mensagem de Verificação */}
+              <div className="border-t border-border pt-6">
+                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Mensagem de Verificação</p></div>
                 <div className="mt-4">
-                  <textarea
-                    value={current.bioMessageText}
-                    onChange={(e) => update("bioMessageText", e.target.value)}
-                    disabled={!bc}
-                    placeholder="Escreva a mensagem..."
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] resize-y"
-                  />
+                  <div className="flex items-start gap-3 max-w-md">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                      <Star className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold">KALLY</span>
+                        <span className="rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground">✓ BOT</span>
+                        <span className="text-xs text-muted-foreground">Hoje às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      <div className="mt-1">
+                        <Input
+                          value={current.bioMessageText}
+                          onChange={(e) => update("bioMessageText", e.target.value)}
+                          disabled={!bc}
+                          placeholder="Insira seu texto aqui..."
+                          className="bg-background border-border text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="mt-3 border-border" disabled={!bc}>Adicionar embed</Button>
                 </div>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Mencionar @everyone</p>
+              </div>
+
+              {/* Tipos de menções */}
+              <div className="border-t border-border pt-6">
+                <p className="text-sm font-bold">Tipos de menções permitidos</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Controle quais tipos de menções a mensagem poderá utilizar.</p>
+                <div className="mt-4 space-y-2 max-w-md">
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div>
+                      <p className="text-sm font-bold">Menções @everyone e @here</p>
+                      <p className="text-xs text-muted-foreground">Permitir menções @everyone e @here na mensagem.</p>
+                    </div>
                     <Switch checked={current.bioMentionEveryone} onCheckedChange={(v) => update("bioMentionEveryone", v)} disabled={!bc} />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Mencionar @cargos</p>
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div>
+                      <p className="text-sm font-bold">Menções de cargos</p>
+                      <p className="text-xs text-muted-foreground">Permitir menções de @cargo na mensagem.</p>
+                    </div>
                     <Switch checked={current.bioMentionRoles} onCheckedChange={(v) => update("bioMentionRoles", v)} disabled={!bc} />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">Mencionar @usuários</p>
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div>
+                      <p className="text-sm font-bold">Menções de usuários</p>
+                      <p className="text-xs text-muted-foreground">Permitir menções de @usuário na mensagem.</p>
+                    </div>
                     <Switch checked={current.bioMentionUsers} onCheckedChange={(v) => update("bioMentionUsers", v)} disabled={!bc} />
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-4">Verificação</h2>
-            <div className="space-y-6">
-              <div className="rounded-lg border border-border/50 bg-card p-6">
-                <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Mensagem de Verificação</p></div>
-                <div className="mt-4">
-                  <div className="flex items-center gap-3">
-                    <button
-                      disabled={!bc}
-                      className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{ borderColor: current.bioVerifyColor, color: current.bioVerifyColor }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Verificar
-                    </button>
-                    <div className="flex items-center gap-1.5">
-                      {["#5865F2", "#9B59B6", "#2ECC71", "#E74C3C"].map((color) => (
-                        <button
-                          key={color}
-                          disabled={!bc}
-                          onClick={() => update("bioVerifyColor", color)}
-                          className={`h-4 w-4 rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-50 ${current.bioVerifyColor === color ? "ring-2 ring-offset-2 ring-offset-background" : ""}`}
-                          style={{ backgroundColor: color, ...(current.bioVerifyColor === color ? { '--tw-ring-color': color } as React.CSSProperties : {}) }}
-                        />
-                      ))}
-                    </div>
+
+              {/* Botão Verificar + cores */}
+              <div className="border-t border-border pt-6">
+                <div className="flex items-center gap-3">
+                  <button
+                    disabled={!bc}
+                    className="flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ borderColor: current.bioVerifyColor, color: current.bioVerifyColor }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Verificar
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {["#5865F2", "#9B59B6", "#2ECC71", "#E74C3C"].map((color) => (
+                      <button
+                        key={color}
+                        disabled={!bc}
+                        onClick={() => update("bioVerifyColor", color)}
+                        className={`h-4 w-4 rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-50 ${current.bioVerifyColor === color ? "ring-2 ring-offset-2 ring-offset-background" : ""}`}
+                        style={{ backgroundColor: color, ...(current.bioVerifyColor === color ? { '--tw-ring-color': color } as React.CSSProperties : {}) }}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+
+              {/* Texto verificado */}
+              <div className="border-t border-border pt-6">
                 <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Texto a ser verificado no perfil dos usuários</p></div>
                 <div className="mt-4">
                   <Input value={current.bioVerifyText} onChange={(e) => update("bioVerifyText", e.target.value)} className="bg-background border-border max-w-md" disabled={!bc} placeholder="Ex: Verificado" />
                 </div>
               </div>
-              <div className="rounded-lg border border-border/50 bg-card p-6">
+
+              {/* Cargos quando verificado */}
+              <div className="border-t border-border pt-6">
                 <div className="border-l-2 border-primary pl-4"><p className="text-sm font-medium">Cargos a serem dados quando verificado</p></div>
                 <div className="mt-4">
-                  <button disabled={!bc} className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50">
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  {current.bioVerifyRoles.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {current.bioVerifyRoles.map((role) => (
+                        <span key={role.id} className="inline-flex items-center gap-1 rounded bg-primary/20 px-2 py-1 text-xs text-primary">
+                          {role.name}
+                          <button onClick={() => update("bioVerifyRoles", current.bioVerifyRoles.filter(r => r.id !== role.id))} className="ml-1 text-muted-foreground hover:text-foreground">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="relative" ref={bioVerifyRolesDropdownRef}>
+                    <button
+                      disabled={!bc}
+                      onClick={() => { setBioVerifyRolesDropdownOpen(!bioVerifyRolesDropdownOpen); setBioRoleSearch(""); }}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    {bioVerifyRolesDropdownOpen && (
+                      <div className="absolute z-50 mt-1 w-64 rounded-md border border-border bg-popover p-2 shadow-lg">
+                        <div className="relative mb-2">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            value={bioRoleSearch}
+                            onChange={(e) => setBioRoleSearch(e.target.value)}
+                            placeholder="Pesquisar cargo..."
+                            className="pl-8 h-8 text-xs bg-background border-border"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="max-h-32 overflow-y-auto">
+                          {mockRoles.filter(r => !current.bioVerifyRoles.some(br => br.id === r.id) && r.name.toLowerCase().includes(bioRoleSearch.toLowerCase())).map((r) => (
+                            <button key={r.id} className="w-full rounded px-3 py-1.5 text-left text-sm hover:bg-accent" onClick={() => { update("bioVerifyRoles", [...current.bioVerifyRoles, r]); setBioVerifyRolesDropdownOpen(false); }}>
+                              {r.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
